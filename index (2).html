@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toxicology Flashcards</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        body {
+            touch-action: pan-y; /* Prevent vertical scroll interference during swipe */
+        }
+        .perspective-1000 { perspective: 1000px; }
+        .preserve-3d { transform-style: preserve-3d; }
+        .backface-hidden { backface-visibility: hidden; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        @keyframes bounce-left {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(-3px); }
+        }
+        @keyframes bounce-right {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(3px); }
+        }
+        .animate-bounce-left { animation: bounce-left 1s infinite; }
+        .animate-bounce-right { animation: bounce-right 1s infinite; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans">
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // Icons as inline SVGs for portability
+        const Icons = {
+            ChevronLeft: () => (
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            ),
+            ChevronRight: () => (
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            ),
+            RotateCcw: () => (
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            ),
+            BookOpen: () => (
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+            ),
+            Layers: () => (
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></svg>
+            )
+        };
+
+        const ToxicologyFlashcards = () => {
+            const flashcardsData = [
+                // --- Part 1: Plant Toxicity ---
+                { id: 1, topic: "Plant Toxicity", front: "What is the epidemiology of plant poisoning?", back: "Common in children <5 years (eat bright berries/leaves) and adults (misuse of products)." },
+                { id: 2, topic: "Plant Toxicity", front: "Besides eating the plant, how can plant toxicity occur?", back: "1. Drinking water from a vase containing plant stems.\n2. Consuming harmless plants treated with insecticides/herbicides." },
+                { id: 3, topic: "Plant Toxicity", front: "What is the 'Golden Rule' for managing plant ingestion?", back: "Treat all plant ingestions as potentially toxic until proven otherwise." },
+                { id: 4, topic: "Plant Toxicity", front: "What is the treatment for oral mucosal irritation from plants?", back: "Demulcents: Ice cream, milk, or frozen confections." },
+                { id: 5, topic: "Plant Toxicity", front: "What is the preferred method of gastric decontamination for plants?", back: "Ipecac-induced emesis." },
+                { id: 6, topic: "Plant Toxicity", front: "Why is gastric lavage limited in value for plant ingestion?", back: "Undigested plant parts (leaves/berries) often clog the orogastric tube. It is only useful if done after emesis within 5–6 hours." },
+                { id: 7, topic: "Plant Toxicity", front: "Is Activated Charcoal effective as a primary treatment for plants?", back: "Generally No. It does not bind well to coarse plant parts. It should be used after emesis/lavage to bind residual poison." },
+                { id: 8, topic: "Arum Family", front: "Name the common plants in the Arum family.", back: "Caladium (Fancy leaf), Elephant's Ear, Philodendron." },
+                { id: 9, topic: "Arum Family", front: "What is the toxic principle in Arum plants?", back: "Calcium Oxalate crystals arranged in bundles (Raphides) or star-clusters (Druses)." },
+                { id: 10, topic: "Arum Family", front: "What are the symptoms of Arum ingestion?", back: "Intense pain upon biting (needle-sharp crystals), localized edema, irritation." },
+                { id: 11, topic: "Arum Family", front: "What is the major complication of Arum toxicity?", back: "Swelling of the tongue/pharynx/larynx causing airway obstruction." },
+                { id: 12, topic: "Christmas Plants", front: "Is Poinsettia toxic?", back: "No, it is nontoxic." },
+                { id: 13, topic: "Jerusalem Cherry", front: "What is the toxic substance in Solanum pseudocapsicum?", back: "Solanine (a glycoalkaloid)." },
+                { id: 14, topic: "Jerusalem Cherry", front: "How is Solanine metabolized and what is the effect?", back: "Hydrolyzed by gastric acid to Alkamine. Effects: GI symptoms, Circulatory collapse, Respiratory distress, CNS depression." },
+                { id: 15, topic: "Cardiotoxic Plants", front: "Which plants resemble Digoxin poisoning?", back: "Foxglove and Oleander." },
+                { id: 16, topic: "Cardiotoxic Plants", front: "What monitoring is required for Foxglove/Oleander poisoning?", back: "Serial ECGs and Serum Potassium (risk of Hyperkalemia)." },
+                { id: 17, topic: "Castor Bean", front: "What is the toxic principle and its mechanism?", back: "Ricin (Phytotoxin). It has two chains: one binds cells, the other inhibits protein synthesis." },
+                { id: 18, topic: "Castor Bean", front: "How toxic are the seeds?", back: "One chewed seed can be fatal. Un-chewed seeds may pass harmlessly." },
+                { id: 19, topic: "Castor Bean", front: "What are the target organs for Ricin?", back: "Kidney, Liver, Pancreas. (Symptoms: GI hemorrhage, hemolysis, convulsions)." },
+                { id: 20, topic: "Rhubarb", front: "Which part of the Rhubarb plant is toxic?", back: "The Leaf (Stem is safe). Heating does not destroy the toxin." },
+                { id: 21, topic: "Rhubarb", front: "What is the mechanism of toxicity?", back: "Oxalic acid binds calcium → insoluble Calcium Oxalate → crystallizes in renal tubules → Acute Renal Failure." },
+                { id: 22, topic: "Rhubarb", front: "What is the specific management for Rhubarb ingestion?", back: "Emesis, followed by Milk or Lime water (Calcium hydroxide) to precipitate oxalate. IV Calcium for hypocalcemia." },
+                { id: 23, topic: "Nightshade / Jimsonweed", front: "What are the toxic alkaloids involved?", back: "Atropine, Hyoscyamine." },
+                { id: 24, topic: "Jimsonweed", front: "Which part of Jimsonweed is most toxic?", back: "The Seeds (10 seeds = 1 mg atropine)." },
+                { id: 25, topic: "Jimsonweed", front: "What are the symptoms of Jimsonweed poisoning?", back: "Anticholinergic signs: Blurred vision, dry mouth, tachycardia, hyperthermia, delirium, hallucinations, coma." },
+                { id: 26, topic: "Jimsonweed", front: "What is the specific antidote?", back: "Physostigmine salicylate (IV)." },
+                { id: 27, topic: "Mushrooms", front: "What is the toxic agent in Amanita phalloides?", back: "Thermostable Cyclopeptides (Amanitin, Phalloidin)." },
+                { id: 28, topic: "Mushrooms", front: "Describe the 3 clinical stages of A. phalloides poisoning.", back: "1 (6-24h): Severe GI pain, cholera-like diarrhea.\n2 (24-48h): Apparent recovery (internal destruction).\n3 (3-5 days): Hepatocellular damage, renal insufficiency, coma, death." },
+                { id: 29, topic: "Mushrooms", front: "What drugs may limit hepatotoxicity?", back: "Penicillin G and Corticosteroids (compete with amanitin for serum protein binding)." },
+
+                // --- Part 2: Forensic & Analytical Toxicology ---
+                { id: 30, topic: "Forensic Toxicology", front: "Define Analytical vs. Forensic Toxicology.", back: "Analytical: Application of chemistry to estimate chemicals.\nForensic: Application to law (identifying causes of death/injury)." },
+                { id: 31, topic: "Forensic Toxicology", front: "List 4 characteristics of an 'Ideal Poison'.", back: "Tasteless, odorless, colorless, soluble, delayed onset, undetectable, mimics natural disease." },
+                { id: 32, topic: "Investigation", front: "What are the 3 steps of a toxicological investigation?", back: "1. History & Specimens.\n2. Toxicological Analysis.\n3. Interpretation." },
+                { id: 33, topic: "Specimens", front: "When must fluid/tissue be collected?", back: "Before embalming (embalming alters/destroys poisons)." },
+                { id: 34, topic: "Analysis Order", front: "Why are GI contents analyzed first?", back: "To check for oral ingestion (large unabsorbed amounts)." },
+                { id: 35, topic: "Analysis Order", front: "Why is the Liver analyzed first among internal organs?", back: "Drugs concentrate in the liver before entering systemic circulation." },
+                { id: 36, topic: "Analysis Order", front: "Why is Urine analyzed?", back: "Kidney is the major excretion organ; high concentration of metabolites." },
+                { id: 37, topic: "Methods", front: "What are the 'Gold Standard' identification methods?", back: "GC-MS (Gas chromatography-mass spectrometry) and LC-MS." },
+                { id: 38, topic: "Interpretation", front: "How do you distinguish Oral vs. IV/Inhalation?", back: "Oral: High conc. in GI tract and Liver.\nIV/Inhalation: High conc. in Lungs > Viscera." },
+                { id: 39, topic: "FUDT", front: "What is Forensic Urine Drug Testing (FUDT)?", back: "Testing urine for drugs; reported only as Positive/Negative." },
+                { id: 40, topic: "Adulteration", front: "How do labs check for adulterated urine samples?", back: "By checking pH, creatinine, specific gravity, color, and smell (for bleach/vinegar)." },
+                { id: 41, topic: "Testimony", front: "What is the difference between 'Objective Testimony' and 'Opinion'?", back: "Objective: Describes methods/findings (facts).\nOpinion: Interpretation of the results." },
+
+                // --- Part 3: OTC Drugs ---
+                { id: 42, topic: "Salicylates", front: "Who is most at risk for serious complications from Aspirin?", back: "Children (accidental ingestion)." },
+                { id: 43, topic: "Aspirin Mechanism", front: "How does Aspirin cause Respiratory Alkalosis?", back: "Stimulates respiratory center (Directly & Indirectly) → Hyperpnea/Tachypnea → loss of CO2." },
+                { id: 44, topic: "Aspirin Mechanism", front: "How does Aspirin cause Metabolic Acidosis?", back: "1. Renal compensation (excretes HCO3).\n2. Uncoupling of oxidative phosphorylation → decreased ATP → glycolysis/ketosis." },
+                { id: 45, topic: "Aspirin Kinetics", front: "What happens to Aspirin kinetics at high doses?", back: "Switches from first-order to Zero-order (rate independent of dose)." },
+                { id: 46, topic: "Aspirin Symptoms", front: "What are the classic symptoms of Aspirin toxicity?", back: "Tinnitus, hyperpnea, vomiting, confusion, convulsions, hyperthermia." },
+                { id: 47, topic: "Aspirin Mgmt", front: "How do you treat Aspirin acidosis?", back: "Sodium Bicarbonate (corrects acidosis + alkalinizes urine to trap salicylate)." },
+                { id: 48, topic: "Aspirin Mgmt", front: "What is required for alkaline diuresis to work?", back: "Correction of Hypokalemia (add Potassium Chloride)." },
+                { id: 49, topic: "Ibuprofen", front: "What is the mechanism of Ibuprofen toxicity?", back: "Decreased intra-renal prostaglandins → decreased renal blood flow → Acute Renal Failure." },
+                { id: 50, topic: "Acetaminophen", front: "Why is Acetaminophen dangerous compared to Aspirin?", back: "No early warning signs (like tinnitus). Liver damage occurs before symptoms are obvious." },
+                { id: 51, topic: "Acetaminophen", front: "Explain the mechanism of Acetaminophen toxicity.", back: "Toxic intermediate NAPQI is formed. In overdose, Glutathione is depleted. NAPQI binds to hepatocytes → Centrilobular Necrosis." },
+                { id: 52, topic: "Acetaminophen", front: "What characterizes Stage II of Acetaminophen toxicity?", back: "Apparent recovery (24–48h), but liver enzymes (SGOT/AST) begin to rise." },
+                { id: 53, topic: "Acetaminophen", front: "What is the antidote and when should it be given?", back: "N-acetyl cysteine (NAC). Best within 10–16 hours." },
+                { id: 54, topic: "Acetaminophen", front: "How does NAC work?", back: "Restores intracellular Glutathione and provides inorganic sulfur." },
+                { id: 55, topic: "Vitamins", front: "Which class of vitamins is more toxic?", back: "Fat-soluble (A, D, K)." },
+                { id: 56, topic: "Vitamin A", front: "What are the mechanisms of Vitamin A toxicity?", back: "1. Saturation of retinol-binding protein.\n2. Ito cells in liver transform to fibroblasts → liver damage." },
+                { id: 57, topic: "Vitamin A", front: "What are the symptoms of Vitamin A toxicity?", back: "Pseudotumor cerebri (increased ICP), dry peeling skin, Hyperostosis (bone growth), teratogenicity." },
+                { id: 58, topic: "Vitamin D", front: "Which vitamin is the most toxic?", back: "Vitamin D." },
+                { id: 59, topic: "Vitamin D", front: "What are the effects of Vitamin D toxicity?", back: "Hypercalcemia, calcification of soft tissues (kidney/heart), renal failure." },
+                { id: 60, topic: "Vitamin K", front: "What is the toxicity of synthetic Vitamin K (Menadione)?", back: "Oxidant stress → rupture of RBC membranes → Hemolysis and Jaundice." },
+                { id: 61, topic: "Vitamin C", front: "What is a risk of Vitamin C megadoses?", back: "Kidney stone formation (oxalate/uric acid)." },
+
+                // --- Part 4: Chemicals & Environmental ---
+                { id: 62, topic: "Hydrocarbons", front: "What is the greatest cause of mortality in Hydrocarbon ingestion?", back: "Aspiration Pneumonitis." },
+                { id: 63, topic: "Hydrocarbons", front: "What physical properties increase aspiration risk?", back: "High Volatility, Low Viscosity, Low Surface Tension (allows 'creep')." },
+                { id: 64, topic: "Hydrocarbons", front: "What is the specific risk of Halogenated Hydrocarbons?", back: "Sensitize heart to catecholamines → Arrhythmias." },
+                { id: 65, topic: "Hydrocarbons Mgmt", front: "Is gastric decontamination recommended?", back: "NO. Emesis/Lavage are generally contraindicated due to aspiration risk." },
+                { id: 66, topic: "Hydrocarbons Mgmt", front: "When is evacuation (emptying stomach) indicated?", back: "Large quantities, aromatics, halogenated, or if mixed with dangerous additives (metals/insecticides)." },
+                { id: 67, topic: "Detergents", front: "Which type of surfactant is most toxic?", back: "Cationic (Quaternary Ammonium) > Anionic/Nonionic." },
+                { id: 68, topic: "Detergents", front: "What are 'Builders' and why are they toxic?", back: "Additives (carbonates/phosphates). High Alkalinity → Corrosive burns." },
+                { id: 69, topic: "Bleach", front: "What happens if Bleach is mixed with Acid or Ammonia?", back: "Release of Chlorine or Chloramine gas (Asphyxiation risk)." },
+                { id: 70, topic: "Bleach Mgmt", front: "What is contraindicated in Bleach ingestion?", back: "Neutralization with acid and Ipecac-induced emesis." },
+                { id: 71, topic: "QACs", front: "What is the antidote for Quaternary Ammonium Compounds?", back: "Soap (inactivates them)." },
+                { id: 72, topic: "Mothballs", front: "What is the toxicity of Naphthalene?", back: "Hemolysis (Anemia), Renal failure (due to Hb blockage)." },
+                { id: 73, topic: "Corrosives", front: "What are the general rules for decontamination?", back: "Contraindicated: Emesis.\nIndicated: Immediate dilution (water/milk) only if alert. Eye irrigation for 20+ mins." },
+
+                // --- Part 5: Venomous Animals ---
+                { id: 74, topic: "Snake Families", front: "Name the two main families and their fang types.", back: "1. Viperidae (Foldable fangs): Vipers, Rattlesnakes.\n2. Elapidae (Fixed fangs): Cobras, Sea snakes." },
+                { id: 75, topic: "Snake Bite Clinical", front: "Differentiate the effects of the two families.", back: "Viperidae: Local necrosis, swelling.\nElapidae: Neurotoxic (paralysis, drowsiness)." },
+                { id: 76, topic: "Sea Snakes", front: "What is the unique toxicity of Sea Snakes?", back: "Polymyositis (severe muscle damage) → Myoglobinuria → Renal Failure." },
+                { id: 77, topic: "Snake Mgmt", front: "What procedures are CONTRAINDICATED in snake bites?", back: "Tourniquets, Incision, and Suction." },
+                { id: 78, topic: "Insects", front: "Differentiate Bee vs. Wasp stings chemically.", back: "Bee: Alkaline.\nWasp/Hornet: Acid." },
+                { id: 79, topic: "Spiders", front: "What are the symptoms of a Black Widow bite?", back: "Muscle rigidity (board-like abdomen mimicking peritonitis), HTN." },
+                { id: 80, topic: "Camel Spider", front: "What does the text say about Camel Spiders?", back: "Text claims: They 'eat stomachs of camels', 'chew on sleeping people', and use venom to 'numb the area'. (Note: Scientifically disputed folklore, but in text)." },
+                { id: 81, topic: "Scorpions", front: "Which species is dangerous in Iraq?", back: "Androctonus crassicauda." },
+                { id: 82, topic: "Sting Rays", front: "How do you treat the thermolabile toxin of a Sting Ray?", back: "Immerse wound in the hottest bearable water." },
+                { id: 83, topic: "Jellyfish", front: "How should tentacles be removed?", back: "With adhesive tape. Do NOT brush with bare hands." }
+            ];
+
+            const [currentIndex, setCurrentIndex] = useState(0);
+            const [isFlipped, setIsFlipped] = useState(false);
+            const [direction, setDirection] = useState(0);
+            const [touchStart, setTouchStart] = useState(null);
+            const [touchEnd, setTouchEnd] = useState(null);
+
+            const minSwipeDistance = 50;
+
+            const onTouchStart = (e) => {
+                setTouchEnd(null);
+                setTouchStart(e.targetTouches[0].clientX);
+            };
+
+            const onTouchMove = (e) => {
+                setTouchEnd(e.targetTouches[0].clientX);
+            };
+
+            const onTouchEnd = () => {
+                if (!touchStart || !touchEnd) return;
+                const distance = touchStart - touchEnd;
+                const isLeftSwipe = distance > minSwipeDistance;
+                const isRightSwipe = distance < -minSwipeDistance;
+
+                if (isLeftSwipe) {
+                    handleNext();
+                } else if (isRightSwipe) {
+                    handlePrev();
+                }
+            };
+
+            const handleNext = () => {
+                if (currentIndex < flashcardsData.length - 1) {
+                    setDirection(1);
+                    setIsFlipped(false);
+                    setTimeout(() => {
+                        setCurrentIndex(prev => prev + 1);
+                        setDirection(0);
+                    }, 200);
+                }
+            };
+
+            const handlePrev = () => {
+                if (currentIndex > 0) {
+                    setDirection(-1);
+                    setIsFlipped(false);
+                    setTimeout(() => {
+                        setCurrentIndex(prev => prev - 1);
+                        setDirection(0);
+                    }, 200);
+                }
+            };
+
+            const handleFlip = () => {
+                setIsFlipped(!isFlipped);
+            };
+
+            const handleReset = () => {
+                setCurrentIndex(0);
+                setIsFlipped(false);
+            };
+
+            // Keyboard navigation
+            useEffect(() => {
+                const handleKeyDown = (e) => {
+                    if (e.key === 'ArrowRight') handleNext();
+                    if (e.key === 'ArrowLeft') handlePrev();
+                    if (e.key === ' ' || e.key === 'Enter') handleFlip();
+                };
+                window.addEventListener('keydown', handleKeyDown);
+                return () => window.removeEventListener('keydown', handleKeyDown);
+            }, [currentIndex]);
+
+            const progress = ((currentIndex + 1) / flashcardsData.length) * 100;
+            const currentCard = flashcardsData[currentIndex];
+
+            return (
+                <div className="min-h-screen flex flex-col items-center justify-center p-4" dir="ltr">
+                    
+                    {/* Header */}
+                    <div className="w-full max-w-md mb-6 flex items-center justify-between">
+                        <div>
+                            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                            <span className="text-blue-600"><Icons.BookOpen /></span>
+                             OsamaFathe  
+                            </h1>
+                            <p className="text-sm text-gray-500 mt-1">سموم ما بعد المد • {flashcardsData.length} Cards</p>
+                        </div>
+                        <div className="text-sm font-medium bg-blue-100 text-blue-700 px-3 py-1 rounded-full whitespace-nowrap">
+                            {currentIndex + 1} / {flashcardsData.length}
+                        </div>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="w-full max-w-md bg-gray-200 h-2 rounded-full mb-8 overflow-hidden">
+                        <div 
+                            className="bg-blue-600 h-full transition-all duration-300 ease-out"
+                            style={{ width: `${progress}%` }}
+                        />
+                    </div>
+
+                    {/* Card Container */}
+                    <div 
+                        className="relative w-full max-w-md h-96 perspective-1000 group cursor-pointer"
+                        onClick={handleFlip}
+                        onTouchStart={onTouchStart}
+                        onTouchMove={onTouchMove}
+                        onTouchEnd={onTouchEnd}
+                    >
+                        <div className={`relative w-full h-full duration-500 preserve-3d transition-all ${
+                            isFlipped ? 'rotate-y-180' : ''
+                        } ${
+                            direction === 1 ? '-translate-x-10 opacity-0' : direction === -1 ? 'translate-x-10 opacity-0' : ''
+                        }`}
+                        >
+                            {/* Front Face */}
+                            <div className="absolute w-full h-full backface-hidden bg-white border border-gray-200 rounded-2xl shadow-xl flex flex-col items-center justify-center p-6 text-center hover:shadow-2xl transition-shadow select-none">
+                                
+                                <div className="absolute top-6 left-1/2 transform -translate-x-1/2">
+                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 uppercase tracking-wide">
+                                        <span className="w-3 h-3"><Icons.Layers /></span>
+                                        {currentCard.topic}
+                                    </span>
+                                </div>
+
+                                <h2 className="text-xl md:text-2xl font-semibold leading-relaxed text-gray-800 mt-6">
+                                    {currentCard.front}
+                                </h2>
+                                
+                                <div className="absolute bottom-6 text-sm text-gray-400 animate-pulse">
+                                    Tap to reveal
+                                </div>
+                            </div>
+
+                            {/* Back Face */}
+                            <div className="absolute w-full h-full backface-hidden rotate-y-180 bg-slate-800 text-white rounded-2xl shadow-xl flex flex-col items-center justify-center p-6 text-center select-none">
+                                
+                                <div className="absolute top-6 left-1/2 transform -translate-x-1/2">
+                                    <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-slate-700 text-slate-300 uppercase tracking-wide">
+                                        {currentCard.topic}
+                                    </span>
+                                </div>
+
+                                <div className="overflow-y-auto max-h-[70%] w-full px-2 scrollbar-hide">
+                                    <p className="text-lg md:text-xl font-medium leading-relaxed whitespace-pre-line">
+                                    {currentCard.back}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Controls */}
+                    <div className="flex items-center justify-center w-full max-w-md mt-10 px-4 h-16 select-none">
+                        {currentIndex === flashcardsData.length - 1 ? (
+                             <button 
+                             onClick={(e) => { e.stopPropagation(); handleReset(); }}
+                             className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-xl shadow-lg hover:bg-green-700 active:scale-95 transition-all font-bold"
+                           >
+                             <Icons.RotateCcw />
+                             Reset
+                           </button>
+                        ) : (
+                            <div className="flex items-center gap-3 text-gray-400 text-sm font-medium opacity-60">
+                                <span className="w-4 h-4 animate-bounce-left"><Icons.ChevronLeft /></span>
+                                <span>Swipe to Navigate</span>
+                                <span className="w-4 h-4 animate-bounce-right"><Icons.ChevronRight /></span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<ToxicologyFlashcards />);
+    </script>
+</body>
+</html>
